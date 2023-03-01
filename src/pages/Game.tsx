@@ -19,7 +19,7 @@ export const Game: Component = () => {
 
   return (
     <div class='absolute bottom-2 m-auto flex justify-center items-center w-full'>
-      <article id='grid' class='relative w-[90%] max-w-full max-h-[100vh] border border-gray-300'>
+      <article id='grid' class='relative w-[90%] max-w-full max-h-[100vh] border border-gray-300 w-min'>
         <Grid />
 
         <For each={blocks()}>{block => <Block color={block.color} x={block.x} y={block.y} />}</For>
