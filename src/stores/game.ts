@@ -1,5 +1,6 @@
 import { createSignal } from 'solid-js'
-import { isActive, moveDown, moveLeft, moveRight, rotate, tick } from './blocks'
+import { detachGameListeners, attachGameListeners } from '../utils/events'
+import { isActive, setBlocks, tick } from './blocks'
 import { Tetromino } from './tetrominoes'
 
 enum GameState {
@@ -10,14 +11,20 @@ enum GameState {
 
 const [gameState, setGameState] = createSignal<GameState>(GameState.default)
 
+const reset = () => {
+  setGameState(GameState.default)
+  setBlocks([])
+  detachGameListeners()
+}
+
 const start = () => {
   setGameState(GameState.playing)
   Tetromino.create()
 
   const interval = setInterval(() => {
     if (gameState() === GameState.over) {
-      console.log('game over')
       clearInterval(interval)
+      reset()
       return
     }
 
@@ -26,28 +33,4 @@ const start = () => {
   }, 300)
 }
 
-const attachGameListeners = () => {
-  document.addEventListener('keydown', (ev: KeyboardEvent) => {
-    if (ev.key === 'ArrowLeft') {
-      moveLeft()
-      return
-    }
-
-    if (ev.key === 'ArrowRight') {
-      moveRight()
-      return
-    }
-
-    if (ev.key === 'ArrowDown') {
-      moveDown()
-      return
-    }
-
-    if (ev.key === ' ') {
-      rotate()
-      return
-    }
-  })
-}
-
-export const Game = { start, attachGameListeners, gameState, setGameState, GameState }
+export const Game = { start, reset, attachGameListeners, gameState, setGameState, GameState }

@@ -6,17 +6,14 @@ interface IBlock {
   color?: string
 }
 
-const width = 10
-const height = 20
-
 export const dimensions = {
   width: 10,
-  height: 20,
+  height: 18,
 }
 
 const createGrid = (): IBlock[][] =>
-  Array.from(Array<IBlock>(height), () => {
-    return new Array<IBlock>(width).fill({
+  Array.from(Array<IBlock>(dimensions.height), () => {
+    return new Array<IBlock>(dimensions.width).fill({
       active: false,
       filled: false,
     })

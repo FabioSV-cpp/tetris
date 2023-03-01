@@ -3,13 +3,13 @@ import { Game } from './game'
 import { dimensions } from './grid'
 
 enum Color {
-  red = '#ff3333',
-  orange = '#ff5733',
-  green = '#7dff33',
-  blue = '#339cff',
-  purple = '#a233ff',
-  yellow = '#f6ff33',
-  pink = '#ff33be',
+  red = '#ff9292',
+  orange = '#ffbf92',
+  green = '#caff92',
+  blue = '#92d6ff',
+  purple = '#cf92ff',
+  yellow = '#f8feb7 ',
+  pink = '#ffb7e8',
 }
 
 interface IBlock {
@@ -136,6 +136,7 @@ const tick = () => {
   const isCollidingBelow = detectCollisionBelow(newBlocks)
   if (isCollidingBelow && isTouchingTop()) {
     setBlocks(blocks => blocks.map(b => ({ ...b, active: false })))
+
     Game.setGameState(Game.GameState.over)
     return
   }
