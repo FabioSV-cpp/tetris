@@ -1,7 +1,8 @@
 import { createSignal } from 'solid-js'
+import { Game } from './game'
 import { dimensions } from './grid'
 
-export enum Color {
+enum Color {
   red = '#ff3333',
   orange = '#ff5733',
   green = '#7dff33',
@@ -11,14 +12,14 @@ export enum Color {
   pink = '#ff33be',
 }
 
-export interface IBlock {
+interface IBlock {
   x: number
   y: number
   active: boolean
   color: Color
 }
 
-export const [blocks, setBlocks] = createSignal<IBlock[]>([])
+const [blocks, setBlocks] = createSignal<IBlock[]>([])
 
 const hasSpaceBeneath = (activeBlocks: IBlock[]) => {
   const lowest = activeBlocks.reduce((prev, curr) => {
@@ -33,6 +34,10 @@ const hasSpaceBeneath = (activeBlocks: IBlock[]) => {
 }
 
 const hasSpaceToLeft = (activeBlocks: IBlock[]) => {
+  if (activeBlocks.length === 0) {
+    return false
+  }
+
   const leftest = activeBlocks.reduce((prev, curr) => {
     if (curr.x < prev.x) {
       return curr
@@ -45,6 +50,10 @@ const hasSpaceToLeft = (activeBlocks: IBlock[]) => {
 }
 
 const hasSpaceToRight = (activeBlocks: IBlock[]) => {
+  if (activeBlocks.length === 0) {
+    return false
+  }
+
   const rightest = activeBlocks.reduce((prev, curr) => {
     if (curr.x > prev.x) {
       return curr
@@ -56,29 +65,89 @@ const hasSpaceToRight = (activeBlocks: IBlock[]) => {
   return rightest.x < dimensions.width - 1
 }
 
-const detectCollision = (blockSet: IBlock[]): boolean => {
+const detectCollisionLeft = (blockSet: IBlock[]): boolean => {
+  const activeBlocks = blocks().filter(b => b.active)
+
   return (
     blockSet.find(staticBlock => {
-      const activeBlocks = blocks().filter(b => b.active)
+      return activeBlocks.find(activeBlock => staticBlock.x === activeBlock.x - 1 && staticBlock.y === activeBlock.y)
+    }) !== undefined
+  )
+}
 
+const detectCollisionRight = (blockSet: IBlock[]): boolean => {
+  const activeBlocks = blocks().filter(b => b.active)
+
+  return (
+    blockSet.find(staticBlock => {
+      return activeBlocks.find(activeBlock => staticBlock.x === activeBlock.x + 1 && staticBlock.y === activeBlock.y)
+    }) !== undefined
+  )
+}
+
+const detectCollisionBelow = (blockSet: IBlock[]): boolean => {
+  const activeBlocks = blocks().filter(b => b.active)
+
+  return (
+    blockSet.find(staticBlock => {
       return activeBlocks.find(activeBlock => staticBlock.y === activeBlock.y + 1 && staticBlock.x === activeBlock.x)
     }) !== undefined
   )
 }
 
-export const tick = () => {
-  const newBlocks: IBlock[] = blocks().filter(block => !block.active)
+const isTouchingTop = (): boolean =>
+  blocks()
+    .filter(b => b.active)
+    .find(b => b.y === 0) !== undefined
 
-  if (detectCollision(newBlocks)) {
-    setBlocks(blocks => blocks.map(b => ({ ...b, active: false })))
-    return
+const clearFullLines = () => {
+  let filteredBlocks = blocks()
+
+  for (let h = 0; h < dimensions.height; h++) {
+    const rowCount = blocks().reduce<number>((accum, curr) => {
+      if (curr.y === h) {
+        accum += 1
+      }
+
+      return accum
+    }, 0)
+
+    if (rowCount === dimensions.width) {
+      filteredBlocks = filteredBlocks
+        .filter(b => b.y !== h)
+        .map(b => {
+          if (b.y < h) {
+            return {
+              ...b,
+              y: b.y + 1,
+            }
+          }
+
+          return b
+        })
+    }
   }
 
+  setBlocks(filteredBlocks)
+}
+
+const tick = () => {
+  const newBlocks: IBlock[] = blocks().filter(block => !block.active)
+  const isCollidingBelow = detectCollisionBelow(newBlocks)
+  if (isCollidingBelow && isTouchingTop()) {
+    setBlocks(blocks => blocks.map(b => ({ ...b, active: false })))
+    Game.setGameState(Game.GameState.over)
+    return
+  }
+  if (isCollidingBelow) {
+    setBlocks(blocks => blocks.map(b => ({ ...b, active: false })))
+    clearFullLines()
+    return
+  }
   blocks()
     .filter(b => b.active)
     .forEach((block, i, active) => {
       const canGoDown = hasSpaceBeneath(active)
-
       newBlocks.push({
         x: block.x,
         y: canGoDown ? block.y + 1 : block.y,
@@ -86,17 +155,16 @@ export const tick = () => {
         color: block.color,
       })
     })
-
   setBlocks(newBlocks)
+  clearFullLines()
 }
 
-export const isActive = (): boolean => blocks().find(block => block.active) !== undefined
+const isActive = (): boolean => blocks().find(block => block.active) !== undefined
 
-// TODO: Doesn't detect collisions
-export const moveLeft = (): boolean => {
+const moveLeft = (): boolean => {
   const activeBlocks = blocks().filter(b => b.active)
 
-  if (!hasSpaceToLeft(activeBlocks)) {
+  if (!hasSpaceToLeft(activeBlocks) || detectCollisionLeft(blocks().filter(b => !b.active))) {
     return false
   }
 
@@ -116,12 +184,10 @@ export const moveLeft = (): boolean => {
   return true
 }
 
-
-// TODO: Detect collisions to objects that are to the right
-export const moveRight = (): boolean => {
+const moveRight = (): boolean => {
   const activeBlocks = blocks().filter(b => b.active)
 
-  if (!hasSpaceToRight(activeBlocks)) {
+  if (!hasSpaceToRight(activeBlocks) || detectCollisionRight(blocks().filter(b => !b.active))) {
     return false
   }
 
@@ -140,3 +206,21 @@ export const moveRight = (): boolean => {
 
   return true
 }
+
+const moveDown = () => tick()
+
+export const rotate = () => {
+  const active = blocks().filter(b => b.active)
+
+  const focus = active[2] // the 3rd block is the pivot point
+  const rotatedBlocks = active.map(b => ({
+    ...b,
+    x: b.y + focus.x - focus.y,
+    y: focus.x + focus.y - b.x - 1,
+  }))
+
+  setBlocks([...blocks().filter(b => !b.active), ...rotatedBlocks])
+}
+
+export type { IBlock }
+export { Color, blocks, setBlocks, tick, isActive, moveLeft, moveRight, moveDown }

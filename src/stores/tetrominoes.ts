@@ -24,7 +24,7 @@ const addSquare = () => {
   setBlocks(newBlocks)
 }
 
-const addRight = () => {
+const addLeft = () => {
   const newBlocks: IBlock[] = blocks()
   newBlocks.push(
     { x: 0, y: 0, active: true, color: Color.orange },
@@ -36,11 +36,11 @@ const addRight = () => {
   setBlocks(newBlocks)
 }
 
-const addLeft = () => {
+const addRight = () => {
   const newBlocks: IBlock[] = blocks()
   newBlocks.push(
     { x: 0, y: 0, active: true, color: Color.pink },
-    { x: 1, y: 0, active: true, color: Color.pink },
+    { x: 0, y: 1, active: true, color: Color.pink },
     { x: 1, y: 1, active: true, color: Color.pink },
     { x: 2, y: 1, active: true, color: Color.pink }
   )
@@ -66,7 +66,7 @@ const addZnake = () => {
     { x: 0, y: 0, active: true, color: Color.red },
     { x: 1, y: 0, active: true, color: Color.red },
     { x: 1, y: 1, active: true, color: Color.red },
-    { x: 1, y: 2, active: true, color: Color.red }
+    { x: 2, y: 1, active: true, color: Color.red }
   )
 
   setBlocks(newBlocks)
@@ -91,7 +91,5 @@ export const Tetromino = {
     const creators = [addLine, addSquare, addRight, addLeft, addSnake, addZnake, addEpsilon]
 
     creators[random]()
-
-    console.log('created tetromino')
   },
 }
